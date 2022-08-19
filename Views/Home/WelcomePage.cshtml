@@ -1,0 +1,15 @@
+﻿
+
+<div class="container">
+    <h1>Welcome To Directory Browser</h1>
+    <h4>Choose the option:</h4>
+
+    <a asp-controller="Home" asp-action="TestData"><button class="btn btn-lg btn-primary">Test Data</button></a>
+    @if (!User.Identity.IsAuthenticated)
+    {
+        <a asp-controller="Account" asp-action="Login"><button class="btn btn-lg btn-primary">Import From OS</button></a>
+    } else
+    {
+        <a asp-controller="Home" asp-action="Importer"><button class="btn btn-lg btn-primary">Import From OS</button></a>
+    }
+</div>
