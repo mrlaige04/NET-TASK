@@ -1,10 +1,8 @@
-﻿
-
-<div class="container">
+﻿<div class="container">
     <form asp-controller="Home" asp-action="Upload">
         <div class="form-group">
           <label for="formFile" class="form-label mt-4">Choose the folder</label>
-          <input class="form-control" type="file" id="folder" webkitdirectory>
+          <input class="form-control" required type="file" id="folder" webkitdirectory directory multiple>
           <button type="submit" class="btn btn-primary">Submit</button>
           <div class="col-sm-10">
             <input type="text" readonly="" class="form-control-plaintext" name="json" id="supersecret" style="display:none;" value="">
@@ -15,14 +13,14 @@
 
 <script>
     document.getElementById("folder").addEventListener("change", function(event) {
-  var output = document.querySelector("ul");
-  var files = event.target.files;
-  var pathes = [];
-  for (var i=0; i<files.length; i++) {
-    pathes.push(files[i].webkitRelativePath);
-  }
-  var json = JSON.stringify(pathes);
-  let secret = document.getElementById("supersecret");
-  secret.value = json;          
-}) ;
+      var output = document.querySelector("ul");
+      var files = event.target.files;
+      var pathes = [];
+      for (var i=0; i<files.length; i++) {
+        pathes.push(files[i].webkitRelativePath);
+      }
+      var json = JSON.stringify(pathes);
+      let secret = document.getElementById("supersecret");
+      secret.value = json;          
+    }) ;
 </script>

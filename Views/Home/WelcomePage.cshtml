@@ -8,8 +8,10 @@
     @if (!User.Identity.IsAuthenticated)
     {
         <a asp-controller="Account" asp-action="Login"><button class="btn btn-lg btn-primary">Import From OS</button></a>
+        
     } else
     {
         <a asp-controller="Home" asp-action="Importer"><button class="btn btn-lg btn-primary">Import From OS</button></a>
+        <a asp-controller="Home" asp-action="GetUsersCatalogs"><button class="btn btn-lg btn-primary">MyFolders</button></a>
     }
 </div>
