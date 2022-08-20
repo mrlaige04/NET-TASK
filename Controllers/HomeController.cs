@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using NET_TASK.Data;
 using NET_TASK.Models;
+using System.Net.Mime;
 using System.Security.Claims;
 using System.Text.Json;
 
@@ -8,10 +9,12 @@ namespace NET_TASK.Controllers
 {
     public class HomeController : Controller
     {
+        private IWebHostEnvironment webHost;
         private ApplicationDbContext db;
-        public HomeController(ApplicationDbContext _db)
+        public HomeController(ApplicationDbContext _db, IWebHostEnvironment _wh)
         {
-            db = _db;         
+            db = _db;
+            webHost = _wh;
         }
                 
         [HttpPost]        
@@ -85,8 +88,11 @@ namespace NET_TASK.Controllers
         [HttpGet]
         public IActionResult DeleteFolder(Guid id)
         {
-            Guid guid = DeleteFolderFromDB(id);
-            return guid != new Guid("00000000-0000-0000-0000-000000000000") ? Index(guid) : RedirectToAction("WelcomePage");
+            bool isUserFolder;
+            Guid guid = DeleteFolderFromDB(id, out isUserFolder);
+            return guid != new Guid("00000000-0000-0000-0000-000000000000") ? Index(guid) : 
+                isUserFolder ? Index(guid) :
+                RedirectToAction("WelcomePage");
         }
 
         [HttpGet]
@@ -169,25 +175,69 @@ namespace NET_TASK.Controllers
         [HttpGet]
         public IActionResult Importer() => View();
 
-        private Guid DeleteFolderFromDB(Guid id)
+        [HttpGet]
+        public PhysicalFileResult ExportYourFolders()
+        {
+            var users_folders = db.Catalogs.Where(x => x.UserID == User.FindFirst(ClaimTypes.NameIdentifier).Value).ToList();
+            string json = JsonSerializer.Serialize(users_folders);
+
+            string path = Path.Combine(webHost.ContentRootPath, @$"ImportFiles\{User.FindFirst(ClaimTypes.NameIdentifier).Value}.json");
+            System.IO.File.Create(path).Close();
+            using (StreamWriter sw = new StreamWriter(path))
+            {
+                sw.Write(json);
+            }
+            return PhysicalFile(path, MediaTypeNames.Application.Json, "ImportYourFolders.json");
+        }
+
+        [HttpPost]
+        public IActionResult ImportYourFolders(IFormFile json)
+        {
+            using (StreamReader sr = new StreamReader(json.OpenReadStream()))
+            {
+                var fileContent = sr.ReadToEnd();
+                try
+                {
+                    var catalogs = JsonSerializer.Deserialize<List<Catalog>>(fileContent);
+                    foreach (var catalog in catalogs)
+                    {
+                        if (!db.Catalogs.Contains(catalog))
+                        {
+                            db.Catalogs.Add(catalog);
+                        }
+                    }
+                    db.SaveChanges();
+                    return RedirectToAction("WelcomePage", "Home");
+                }
+                catch (Exception)
+                {
+                    return BadRequest("Invalid JSON");
+                }
+            }
+        }
+
+        [HttpGet]
+        public IActionResult GetImportJsonFile() => View("GetFilesFromJson");
+        private Guid DeleteFolderFromDB(Guid id, out bool isUserFolder)
         {
             var catalog = db.Catalogs.FirstOrDefault(x => x.Id == id);
+            isUserFolder = false;
+            bool zaglushka = true;
             if (catalog == null) return new Guid("00000000-0000-0000-0000-000000000000");
             while (db.Catalogs.Any(x => x.ParentID == catalog.Id))
             {
                 List<Catalog> catalogs = db.Catalogs.Where(x => x.ParentID == catalog.Id).ToList();
                 foreach (var item in catalogs)
                 {
-                    DeleteFolderFromDB(item.Id);
+                    DeleteFolderFromDB(item.Id, out zaglushka);
                 }
             }
-            
+            isUserFolder = catalog.UserID == User.FindFirst(ClaimTypes.NameIdentifier).Value; 
             db.Catalogs.Remove(catalog);
             db.SaveChanges();
             return catalog.ParentID;
         }
     }
-
 
     public class FolderTempModel {
         public string name;

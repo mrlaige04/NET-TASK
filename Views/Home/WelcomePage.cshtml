@@ -1,6 +1,6 @@
 ﻿<div class="container">
-    <h1>Welcome To Directory Browser</h1>
-    <h4>Choose the option:</h4>
+    <h1 style="color:black;">Welcome To Directory Browser</h1>
+    <h4 style="color:black;">Choose the option:</h4>
     
     <a asp-controller="Home" asp-action="TestData" class="btn btn-lg btn-primary">Test Data</a>
     @if (!User.Identity.IsAuthenticated)
@@ -10,5 +10,8 @@
     {
         <a asp-controller="Home" asp-action="Importer" class="btn btn-lg btn-primary">Import From OS</a>
         <a asp-controller="Home" asp-action="GetUsersCatalogs" class="btn btn-lg btn-primary">My Folders</a>
+
+        <a asp-controller="Home" asp-action="ExportYourFolders" class="btn btn-lg btn-primary">Export My Folders</a>
+        <a asp-controller="Home" asp-action="GetImportJsonFile" class="btn btn-lg btn-primary">Import Folders From JSON</a>
     }
 </div>

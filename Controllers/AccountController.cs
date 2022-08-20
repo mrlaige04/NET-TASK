@@ -78,5 +78,7 @@ namespace NET_TASK.Controllers
             await _signInManager.SignOutAsync();
             return RedirectToAction("WelcomePage", "Home");
         }
+
+        
     }
 }
