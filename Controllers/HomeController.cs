@@ -13,8 +13,7 @@ namespace NET_TASK.Controllers
         {
             db = _db;         
         }
-        
-        
+                
         [HttpPost]        
         public IActionResult Upload(string json)
         {
@@ -102,21 +101,13 @@ namespace NET_TASK.Controllers
         }
 
 
-        [HttpPost]
+        [HttpGet]
         public IActionResult DeleteFolder(Guid id)
         {
-            var catalog = db.Catalogs.FirstOrDefault(x=>x.Id == id && x.UserID == User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            if (catalog == null) return BadRequest();
-
-            while (db.Catalogs.Any(x => x.ParentID == catalog.Id))
-            {
-                IEnumerable<Catalog> catalogs = db.Catalogs.Where(x => x.ParentID == catalog.Id);
-            }
-
-            return RedirectToAction("WelcomePage", "Home");
+            Guid guid = DeleteFolderFromDB(id);
+            return guid != new Guid("00000000-0000-0000-0000-000000000000") ? Index(guid) : GetUsersCatalogs();
         }
 
-        // TODO : GetUSers
         [HttpGet]
         public IActionResult GetUsersCatalogs()
         {
@@ -128,8 +119,7 @@ namespace NET_TASK.Controllers
             IndexViewModel ivm = new IndexViewModel()
             {
                 Catalogs = catalogs,
-                CurrentCatalog = null,
-                
+                CurrentCatalog = null,                
             };
             return View("Index", ivm);
         }
@@ -195,10 +185,29 @@ namespace NET_TASK.Controllers
 
         [HttpGet]
         public IActionResult WelcomePage() => View();
-
-
+        
         [HttpGet]
         public IActionResult Importer() => View();
+
+        private Guid DeleteFolderFromDB(Guid id)
+        {
+            using (var catalog = db.Catalogs.FirstOrDefault(x => x.Id == id))
+            {
+                if (catalog == null) return new Guid("00000000-0000-0000-0000-000000000000");
+                while (db.Catalogs.Any(x => x.ParentID == catalog.Id))
+                {
+                    List<Catalog> catalogs = db.Catalogs.Where(x => x.ParentID == catalog.Id).ToList();
+                    foreach (var item in catalogs)
+                    {
+                        DeleteFolderFromDB(item.Id);
+                    }
+                }
+                
+                db.Catalogs.Remove(catalog);
+                db.SaveChanges();
+                return catalog.ParentID;
+            }            
+        }
     }
 
 

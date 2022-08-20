@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace NET_TASK.Models
 {
     [Table("Catalogs")]
-    public class Catalog
+    public class Catalog : IDisposable
     {
         [Key]
         public Guid Id { get; set; }
@@ -15,5 +15,7 @@ namespace NET_TASK.Models
         [ForeignKey("ApplicationUser")]
         public string? UserID { get; set; }
         public User? User { get; set; }
+
+        public void Dispose() {}
     }
 }

@@ -1,12 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-
 using Microsoft.AspNetCore.Identity;
-
 using NET_TASK.Data;
 using NET_TASK.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-Console.WriteLine(Guid.NewGuid());
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<ApplicationDbContext>(options=>options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -37,6 +35,5 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=WelcomePage}/{id?}");
-
 
 app.Run();
