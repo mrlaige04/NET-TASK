@@ -23,36 +23,23 @@ namespace NET_TASK.Controllers
             {
                 files[i] = files[i].Substring(0, files[i].LastIndexOf('/'));
             }
-            files = files.Distinct().ToList();
+            files = files.Distinct().ToList();            
             
-            
-            List<FolderTempModel> folds = new List<FolderTempModel>();
-
+            List<FolderTempModel> folds = new List<FolderTempModel>();          
             foreach (var file in files)
             {
                 var folders = file.Split('/').ToList();
                 folds.Add(new FolderTempModel(folders[0] + "/", 0, "null", Guid.NewGuid()));
                 for (int i = 1; i < folders.Count; i++)
                 {
-                    var fldr = folders[i];
                     string str = "";
-                    for (int j = 0; j < i; j++)
-                    {
-                        str += folders[j] + "/";
-                    }
+                    folders.GetRange(0, i).ForEach(x => str += x + "/");                  
                     folds.Add(new FolderTempModel(str + folders[i] + "/", i, str, Guid.NewGuid()));
                 }
-            }
+            }  
+            folds = folds.Distinct().ToList();          
             
-            folds = folds.Distinct().ToList();
-            foreach (var item in folds)
-            {
-                Console.WriteLine(item.name + " " + item.level + " " + item.parent);
-            }
-
-            Console.WriteLine(new string ('\n',20));
-            List<CatalogWithParent> catalogs = new List<CatalogWithParent>();
-            
+            List<CatalogWithParent> catalogs = new List<CatalogWithParent>();          
             foreach(var lvl in folds.Select(x => x.level))
             {
                 var foldsByLvl = folds.Where(x => x.level == lvl).ToList();
@@ -71,16 +58,11 @@ namespace NET_TASK.Controllers
                         };
                         curCat.ParentID = parent == null ? new Guid("00000000-0000-0000-0000-000000000000") : parent.id;
                         if (!catalogs.Any(x=>x.ParentName+x.Name==curCat.ParentName+curCat.Name))
-                        {
                             catalogs.Add(curCat);
-                        }
-                        
-                    } catch 
-                    {
-                        Console.WriteLine("Что то я ошибся");
-                    }
+                    } catch { }
                 }
             }
+                        
             foreach (var item in catalogs)
             {
                 string nm = item.Name.Contains('/') ?
@@ -100,12 +82,11 @@ namespace NET_TASK.Controllers
             return RedirectToAction("WelcomePage", "Home");
         }
 
-
         [HttpGet]
         public IActionResult DeleteFolder(Guid id)
         {
             Guid guid = DeleteFolderFromDB(id);
-            return guid != new Guid("00000000-0000-0000-0000-000000000000") ? Index(guid) : GetUsersCatalogs();
+            return guid != new Guid("00000000-0000-0000-0000-000000000000") ? Index(guid) : RedirectToAction("WelcomePage");
         }
 
         [HttpGet]
@@ -118,8 +99,7 @@ namespace NET_TASK.Controllers
             
             IndexViewModel ivm = new IndexViewModel()
             {
-                Catalogs = catalogs,
-                CurrentCatalog = null,                
+                Catalogs = catalogs                
             };
             return View("Index", ivm);
         }
@@ -191,22 +171,20 @@ namespace NET_TASK.Controllers
 
         private Guid DeleteFolderFromDB(Guid id)
         {
-            using (var catalog = db.Catalogs.FirstOrDefault(x => x.Id == id))
+            var catalog = db.Catalogs.FirstOrDefault(x => x.Id == id);
+            if (catalog == null) return new Guid("00000000-0000-0000-0000-000000000000");
+            while (db.Catalogs.Any(x => x.ParentID == catalog.Id))
             {
-                if (catalog == null) return new Guid("00000000-0000-0000-0000-000000000000");
-                while (db.Catalogs.Any(x => x.ParentID == catalog.Id))
+                List<Catalog> catalogs = db.Catalogs.Where(x => x.ParentID == catalog.Id).ToList();
+                foreach (var item in catalogs)
                 {
-                    List<Catalog> catalogs = db.Catalogs.Where(x => x.ParentID == catalog.Id).ToList();
-                    foreach (var item in catalogs)
-                    {
-                        DeleteFolderFromDB(item.Id);
-                    }
+                    DeleteFolderFromDB(item.Id);
                 }
-                
-                db.Catalogs.Remove(catalog);
-                db.SaveChanges();
-                return catalog.ParentID;
-            }            
+            }
+            
+            db.Catalogs.Remove(catalog);
+            db.SaveChanges();
+            return catalog.ParentID;
         }
     }
 
